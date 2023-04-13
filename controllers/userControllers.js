@@ -45,33 +45,40 @@ exports.getAllUsers = async(req,res)=>{
 
 // user Login 
 
-exports.loginUser = async(req,res)=>{
-    try {
-      const {email,password} = req.body;
-      const userCredential = await User.findOne({email:email})
-      if (userCredential) {
-        const authenticated = bycrypt.compareSync(password,userCredential.password);
-        if (authenticated) {
-          jwt.sign({email,id:userCredential._id},"UserToken",{},(err,token)=>{
-            if (err) {
-              res.status(500).json({
-                success:false,
-                message:err.message
-              })
-            }
-            else{
-              res.status(200).json({
-                status:"success",
-                "data":userCredential,
-                "token":token
-  
-              })
-            }
-          })
-        }
+exports.loginUser = async (req,res) =>{
+  try {
+    let email = req.body.email;
+    let password = req.body.password;
+    const userCredentials = await User.findOne({email:email})
+    if (userCredentials) {
+      const authenticated = bycrypt.compareSync(password,userCredentials.password)
+      if (authenticated) {
+        jwt.sign({email:email,id:userCredentials._id},"UserToken",{expiresIn:"1d"},(err,token)=>{
+          if (err) {
+            res.status(500).json({
+              "status":false,
+              message:err.message
+            })
+          }
+          else{
+            res.json({
+              "status":"success",
+             "data":userCredentials,
+              "token":token
+            })
+          }
+        })
       }
-      
-    } catch (error) {
-      
+      else{
+        res.json({"status":"failed","data":"invalid password"})
     }
+    }else{
+      res.json({"status":"failed","data":"invalid email"})
   }
+  } catch (error) {
+    res.status(500).json({
+      "status":false,
+      message:error.message
+    })
+  }
+}
